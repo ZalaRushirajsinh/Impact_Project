@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SmartLab OS - Intelligent Laboratory Resource & IoT Management System</title>
+  <meta name="description" content="Next-generation smart laboratory resource allocation, IoT environmental monitoring, chemical inventory, and slot booking management platform.">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- FontAwesome 6 Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Chart.js for Live IoT Visualizations -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- QRCode.js for Digital Laboratory Instrument Passes -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  <!-- Core Stylesheet -->
+  <link rel="stylesheet" href="index.css">
+</head>
+<body>
+
+  <div class="app-wrapper">
+    <!-- Sidebar Navigation -->
+    <aside class="app-sidebar" id="appSidebar">
+      <div class="brand-section">
+        <div class="brand-logo-icon">
+          <i class="fa-solid fa-atom"></i>
+        </div>
+        <div class="brand-titles">
+          <h1>SmartLab OS</h1>
+          <span>Resource & IoT Hub</span>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-category-label">Operations</div>
+        <button class="nav-link-btn active" data-target="view-dashboard">
+          <i class="fa-solid fa-gauge-high"></i>
+          <span>Dashboard & IoT</span>
+        </button>
+        <button class="nav-link-btn" data-target="view-equipment">
+          <i class="fa-solid fa-microchip"></i>
+          <span>Instruments & Gear</span>
+          <span class="nav-badge" id="sidebarEqCount">7</span>
+        </button>
+        <button class="nav-link-btn" data-target="view-bookings">
+          <i class="fa-solid fa-calendar-check"></i>
+          <span>Smart Slot Booking</span>
+          <span class="nav-badge" id="sidebarBookingsCount">4</span>
+        </button>
+
+        <div class="nav-category-label">Materials & Safety</div>
+        <button class="nav-link-btn" data-target="view-inventory">
+          <i class="fa-solid fa-flask-vial"></i>
+          <span>Chemicals & Reagents</span>
+          <span class="nav-badge" id="sidebarLowStockCount">1</span>
+        </button>
+        <button class="nav-link-btn" data-target="view-maintenance">
+          <i class="fa-solid fa-screwdriver-wrench"></i>
+          <span>Maintenance & Tickets</span>
+          <span class="nav-badge" id="sidebarMntCount">2</span>
+        </button>
+        <button class="nav-link-btn" data-target="view-access">
+          <i class="fa-solid fa-id-card-clip"></i>
+          <span>RFID Access Control</span>
+        </button>
+
+        <div class="nav-category-label">Intelligence</div>
+        <button class="nav-link-btn" data-target="view-reports">
+          <i class="fa-solid fa-chart-line"></i>
+          <span>Audit Logs & Reports</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="persona-card">
+          <div class="persona-avatar" id="currentPersonaAvatar">SV</div>
+          <div class="persona-info">
+            <div class="persona-name" id="currentPersonaName">Dr. Sarah Vance</div>
+            <div class="persona-role-badge" id="currentPersonaRole">Lab Director (Admin)</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Viewport -->
+    <main class="main-viewport">
+      <!-- Top Sticky Header -->
+      <header class="top-header">
+        <div class="header-left">
+          <button class="menu-toggle-btn" id="sidebarToggleBtn" aria-label="Toggle Sidebar">
+            <i class="fa-solid fa-bars"></i>
+          </button>
+          <div class="header-title-group">
+            <h2 id="pageHeading">Dashboard & Telemetry</h2>
+            <p id="pageSubHeading">Real-time environmental monitoring and instrument utilization</p>
+          </div>
+        </div>
+
+        <div class="header-right">
+          <!-- Backend Connection Badge -->
+          <div class="status-badge status-online" id="backendStatusBadge">
+            <span class="status-dot"></span> REST Backend: Online (:8000)
+          </div>
+
+          <!-- Role Persona Switcher -->
+          <div class="role-switcher-wrap">
+            <select id="userRoleSelect" title="Switch User Persona">
+              <option value="admin">Dr. Sarah Vance (Admin / Director)</option>
+              <option value="technician">Markus Reed (Chief Technician)</option>
+              <option value="student" selected>Elena Rostova (PhD Researcher / Student)</option>
+            </select>
+          </div>
+
+          <!-- Quick Booking Button -->
+          <button class="btn btn-primary btn-sm" id="quickBookBtn">
+            <i class="fa-solid fa-plus"></i> Reserve Slot
+          </button>
+
+          <!-- Audio Sound FX Toggle -->
+          <button class="header-btn-icon" id="soundToggleBtn" title="Toggle Audio Sound FX">
+            <i class="fa-solid fa-volume-high"></i>
+          </button>
+
+          <!-- Theme Toggle -->
+          <button class="header-btn-icon" id="themeToggleBtn" title="Toggle Dark/Light Mode">
+            <i class="fa-solid fa-moon"></i>
+          </button>
+        </div>
+      </header>
+
+      <!-- Dynamic Page Container -->
+      <div class="page-container">
+
+        <!-- ===================================================================
+             1. DASHBOARD & TELEMETRY VIEW
+             =================================================================== -->
+        <section class="view-section active" id="view-dashboard">
+          <!-- Key Metrics Strip -->
+          <div class="metric-grid">
+            <div class="metric-card">
+              <div class="metric-header">
+                <span class="metric-title">Instruments Available</span>
+                <div class="metric-icon-box icon-green"><i class="fa-solid fa-circle-check"></i></div>
+              </div>
+              <div class="metric-value" id="statAvailEq">5 / 7</div>
+              <div class="metric-footer"><span class="highlight">71.4%</span> operational readiness</div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-header">
+                <span class="metric-title">Active Lab Sessions</span>
+                <div class="metric-icon-box icon-cyan"><i class="fa-solid fa-flask"></i></div>
+              </div>
+              <div class="metric-value" id="statInUseEq">1</div>
+              <div class="metric-footer"><span id="statActiveBookings">2 total bookings today</span></div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-header">
+                <span class="metric-title">Chemical Reorder Alerts</span>
+                <div class="metric-icon-box icon-amber"><i class="fa-solid fa-triangle-exclamation"></i></div>
+              </div>
+              <div class="metric-value" id="statLowStock">2</div>
+              <div class="metric-footer">Threshold alerts triggered</div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-header">
+                <span class="metric-title">Pending Maintenance</span>
+                <div class="metric-icon-box icon-rose"><i class="fa-solid fa-wrench"></i></div>
+              </div>
+              <div class="metric-value" id="statOpenMnt">2</div>
+              <div class="metric-footer">1 high-priority ticket open</div>
+            </div>
+          </div>
+
+          <!-- Live IoT Laboratory Rooms -->
+          <div class="section-header-bar">
+            <div class="section-heading-group">
+              <h3><i class="fa-solid fa-tower-broadcast" style="color:var(--primary)"></i> Live IoT Facility Monitoring</h3>
+              <p>Autonomous sensor telemetry across active research wings</p>
+            </div>
+            <button class="btn btn-secondary btn-sm" id="refreshRoomsBtn">
+              <i class="fa-solid fa-rotate"></i> Refresh Telemetry
+            </button>
+          </div>
+
+          <div class="room-cards-grid" id="roomCardsContainer">
+            <!-- Dynamically Rendered -->
+          </div>
+
+          <!-- Interactive Charts -->
+          <div class="charts-grid">
+            <div class="chart-card">
+              <div class="chart-card-header">
+                <h4><i class="fa-solid fa-chart-area" style="color:var(--primary)"></i> Real-Time Environmental Telemetry</h4>
+                <span class="status-badge status-online"><span class="status-dot"></span> Live Stream (5m)</span>
+              </div>
+              <div class="chart-canvas-wrap">
+                <canvas id="telemetryChart"></canvas>
+              </div>
+            </div>
+
+            <div class="chart-card">
+              <div class="chart-card-header">
+                <h4><i class="fa-solid fa-chart-pie" style="color:var(--accent-violet)"></i> Utilization by Discipline</h4>
+              </div>
+              <div class="chart-canvas-wrap">
+                <canvas id="deptUsageChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===================================================================
+             2. EQUIPMENT & INSTRUMENTS VIEW
+             =================================================================== -->
+        <section class="view-section" id="view-equipment">
+          <div class="filter-bar">
+            <div class="search-input-wrap">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input type="text" id="eqSearchInput" placeholder="Search instruments by name, model, serial #...">
+            </div>
+
+            <div class="filter-pills" id="eqCategoryPills">
+              <button class="filter-pill-btn active" data-category="All">All Categories</button>
+              <button class="filter-pill-btn" data-category="Analytical">Analytical</button>
+              <button class="filter-pill-btn" data-category="Imaging">Imaging</button>
+              <button class="filter-pill-btn" data-category="Bio-Process">Bio-Process</button>
+              <button class="filter-pill-btn" data-category="Optics">Optics</button>
+              <button class="filter-pill-btn" data-category="Fabrication">Fabrication</button>
+            </div>
+
+            <button class="btn btn-primary btn-sm admin-only" id="addNewEquipmentBtn">
+              <i class="fa-solid fa-plus"></i> Add Instrument
+            </button>
+          </div>
+
+          <div class="equipment-grid" id="equipmentGridContainer">
+            <!-- Dynamically populated -->
+          </div>
+        </section>
+
+        <!-- ===================================================================
+             3. SMART SLOT BOOKINGS VIEW
+             =================================================================== -->
+        <section class="view-section" id="view-bookings">
+          <div class="filter-bar">
+            <div class="search-input-wrap">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input type="text" id="bookingSearchInput" placeholder="Search reservations by researcher, equipment...">
+            </div>
+
+            <div class="filter-pills" id="bookingStatusPills">
+              <button class="filter-pill-btn active" data-status="All">All Statuses</button>
+              <button class="filter-pill-btn" data-status="In-Session">In-Session</button>
+              <button class="filter-pill-btn" data-status="Confirmed">Confirmed</button>
+              <button class="filter-pill-btn" data-status="Pending Approval">Pending</button>
+              <button class="filter-pill-btn" data-status="Completed">Completed</button>
+            </div>
+
+            <button class="btn btn-primary btn-sm" id="createReservationBtn">
+              <i class="fa-solid fa-calendar-plus"></i> New Reservation
+            </button>
+          </div>
+
+          <div class="data-table-container">
+            <table class="custom-table" id="bookingsTable">
+              <thead>
+                <tr>
+                  <th>Booking ID</th>
+                  <th>Instrument</th>
+                  <th>Researcher</th>
+                  <th>Date & Time Window</th>
+                  <th>Duration / Rate</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="bookingsTableBody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ===================================================================
+             4. CHEMICALS & HAZARDOUS REAGENTS INVENTORY
+             =================================================================== -->
+        <section class="view-section" id="view-inventory">
+          <div class="filter-bar">
+            <div class="search-input-wrap">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input type="text" id="chemSearchInput" placeholder="Search chemicals, CAS #, chemical formula...">
+            </div>
+
+            <div class="filter-pills" id="chemCategoryPills">
+              <button class="filter-pill-btn active" data-category="All">All Materials</button>
+              <button class="filter-pill-btn" data-category="Solvent">Solvents</button>
+              <button class="filter-pill-btn" data-category="Inorganic Acid">Acids</button>
+              <button class="filter-pill-btn" data-category="Surfactant / Reagent">Reagents</button>
+              <button class="filter-pill-btn" data-category="Enzyme / Biotech">Enzymes</button>
+              <button class="filter-pill-btn" data-category="Consumable">Consumables</button>
+            </div>
+
+            <button class="btn btn-primary btn-sm admin-only" id="addChemicalBtn">
+              <i class="fa-solid fa-plus"></i> Add Chemical / Reagent
+            </button>
+          </div>
+
+          <div class="inventory-grid" id="inventoryGridContainer">
+            <!-- Dynamically populated -->
+          </div>
+        </section>
+
+        <!-- ===================================================================
+             5. MAINTENANCE & TICKETING VIEW
+             =================================================================== -->
+        <section class="view-section" id="view-maintenance">
+          <div class="section-header-bar">
+            <div class="section-heading-group">
+              <h3><i class="fa-solid fa-screwdriver-wrench" style="color:var(--accent-amber)"></i> Preventive Maintenance & Breakdown Tickets</h3>
+              <p>Track instrument calibrations, diagnostics, and repairs</p>
+            </div>
+            <button class="btn btn-primary btn-sm" id="reportIncidentBtn">
+              <i class="fa-solid fa-triangle-exclamation"></i> Report Fault / Open Ticket
+            </button>
+          </div>
+
+          <div class="data-table-container">
+            <table class="custom-table" id="maintenanceTable">
+              <thead>
+                <tr>
+                  <th>Ticket ID</th>
+                  <th>Instrument</th>
+                  <th>Issue & Diagnostics</th>
+                  <th>Priority</th>
+                  <th>Reported Date</th>
+                  <th>Assigned To</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="maintenanceTableBody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ===================================================================
+             6. SMART RFID ACCESS SIMULATOR VIEW
+             =================================================================== -->
+        <section class="view-section" id="view-access">
+          <div class="access-console-grid">
+            <!-- RFID Simulator Console -->
+            <div class="console-card">
+              <h3><i class="fa-solid fa-id-card-clip" style="color:var(--primary)"></i> Virtual Smart Badge Door Access Simulator</h3>
+              <p style="font-size:0.8rem; color:var(--text-muted); margin:0.5rem 0 1.25rem;">
+                Test laboratory security authorization rules based on current user persona credentials and room department clearance.
+              </p>
+
+              <div class="form-group">
+                <label for="rfidTargetRoom">Target Laboratory Wing</label>
+                <select id="rfidTargetRoom">
+                  <option value="ROOM-101">ROOM-101: Advanced Spectroscopy & Optics Lab</option>
+                  <option value="ROOM-102">ROOM-102: Bio-Molecular & Biotechnology Lab</option>
+                  <option value="ROOM-103">ROOM-103: Organic Chemistry & Synthesis Lab</option>
+                  <option value="ROOM-104">ROOM-104: Robotics & Embedded IoT Prototyping Lab</option>
+                </select>
+              </div>
+
+              <div class="rfid-scanner-box" id="virtualRfidPad">
+                <div class="rfid-icon"><i class="fa-solid fa-fingerprint"></i></div>
+                <h4 style="font-size:1.1rem; margin-bottom:0.3rem;">Tap or Click to Swipe RFID Badge</h4>
+                <p style="font-size:0.8rem; color:var(--text-muted);" id="rfidPromptPersona">
+                  Current Badge: <strong>Dr. Sarah Vance</strong> (RFID-88129)
+                </p>
+              </div>
+            </div>
+
+            <!-- Live Access Feed -->
+            <div class="console-card">
+              <h3><i class="fa-solid fa-list-check" style="color:var(--accent-emerald)"></i> Live Door Clearance Feed</h3>
+              <p style="font-size:0.8rem; color:var(--text-muted); margin:0.5rem 0 1rem;">
+                Audited keycard swipes and access grants/denials
+              </p>
+
+              <div class="data-table-container" style="max-height: 380px; overflow-y: auto;">
+                <table class="custom-table">
+                  <thead>
+                    <tr>
+                      <th>Time</th>
+                      <th>User</th>
+                      <th>Room</th>
+                      <th>Result</th>
+                    </tr>
+                  </thead>
+                  <tbody id="accessLogsTableBody">
+                    <!-- Dynamically populated -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===================================================================
+             7. AUDIT LOGS & REPORTS VIEW
+             =================================================================== -->
+        <section class="view-section" id="view-reports">
+          <div class="section-header-bar">
+            <div class="section-heading-group">
+              <h3><i class="fa-solid fa-file-contract" style="color:var(--primary)"></i> System Audit Log & Export Center</h3>
+              <p>Tamper-evident logs of all reservations, check-ins, chemical consumptions, and maintenance changes</p>
+            </div>
+            <div style="display:flex; gap:0.5rem;">
+              <button class="btn btn-secondary btn-sm" id="exportAuditCsvBtn">
+                <i class="fa-solid fa-file-csv"></i> Export CSV
+              </button>
+              <button class="btn btn-primary btn-sm" id="printReportBtn">
+                <i class="fa-solid fa-print"></i> Print Lab Report
+              </button>
+            </div>
+          </div>
+
+          <div class="data-table-container">
+            <table class="custom-table" id="auditTrailTable">
+              <thead>
+                <tr>
+                  <th>Log ID</th>
+                  <th>Timestamp</th>
+                  <th>Action Event</th>
+                  <th>User / Origin</th>
+                  <th>Details & Parameters</th>
+                </tr>
+              </thead>
+              <tbody id="auditTrailTableBody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- ===================================================================
+       MODALS
+       =================================================================== -->
+
+  <!-- Modal 1: Reserve Slot -->
+  <div class="modal-backdrop" id="bookingModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-calendar-plus" style="color:var(--primary)"></i> Reserve Instrument Time Slot</h3>
+        <button class="modal-close-btn" data-close="bookingModal">&times;</button>
+      </div>
+      <form id="newBookingForm">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="bookEquipmentSelect">Select Instrument</label>
+            <select id="bookEquipmentSelect" required></select>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="bookDate">Reservation Date</label>
+              <input type="date" id="bookDate" required>
+            </div>
+            <div class="form-group">
+              <label for="bookDepartment">Department</label>
+              <input type="text" id="bookDepartment" readonly>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="bookStartTime">Start Time (24h)</label>
+              <input type="time" id="bookStartTime" required value="10:00">
+            </div>
+            <div class="form-group">
+              <label for="bookEndTime">End Time (24h)</label>
+              <input type="time" id="bookEndTime" required value="12:00">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="bookPurpose">Research Project / Purpose</label>
+            <textarea id="bookPurpose" rows="3" placeholder="Describe the experimental protocol or objective..." required></textarea>
+          </div>
+
+          <div id="bookingEstimateBox" style="background:var(--bg-surface-elevated); padding:0.85rem; border-radius:var(--radius-md); font-size:0.8rem;">
+            <div>Estimated Duration: <strong id="estDuration">2.0 Hours</strong></div>
+            <div>Calculated Cost / Credit: <strong id="estCost">$40.00</strong></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-close="bookingModal">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check"></i> Confirm Reservation</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 2: Add Instrument -->
+  <div class="modal-backdrop" id="addEquipmentModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-plus-circle" style="color:var(--primary)"></i> Add New Laboratory Instrument</h3>
+        <button class="modal-close-btn" data-close="addEquipmentModal">&times;</button>
+      </div>
+      <form id="newEquipmentForm">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="eqName">Instrument Name</label>
+            <input type="text" id="eqName" placeholder="e.g. Laser Confocal Microscope" required>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="eqCategory">Category</label>
+              <select id="eqCategory" required>
+                <option value="Analytical">Analytical</option>
+                <option value="Imaging">Imaging</option>
+                <option value="Bio-Process">Bio-Process</option>
+                <option value="Optics">Optics</option>
+                <option value="Fabrication">Fabrication</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="eqModel">Model & Brand</label>
+              <input type="text" id="eqModel" placeholder="e.g. Olympus FV3000" required>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="eqRoomId">Assigned Lab Room</label>
+              <select id="eqRoomId" required></select>
+            </div>
+            <div class="form-group">
+              <label for="eqHourlyRate">Hourly Rate ($)</label>
+              <input type="number" id="eqHourlyRate" value="30" min="0" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="eqSpecs">Specifications & Features</label>
+            <input type="text" id="eqSpecs" placeholder="e.g. Spectral detection up to 800nm, 4 laser lines" required>
+          </div>
+          <div class="form-group">
+            <label for="eqLocation">Physical Bench Location</label>
+            <input type="text" id="eqLocation" placeholder="e.g. Optics Bench 4 - Dark Room" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-close="addEquipmentModal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Instrument</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 3: Chemical Consumption Log -->
+  <div class="modal-backdrop" id="consumeChemicalModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-flask" style="color:var(--accent-amber)"></i> Log Chemical Reagent Consumption</h3>
+        <button class="modal-close-btn" data-close="consumeChemicalModal">&times;</button>
+      </div>
+      <form id="consumeChemicalForm">
+        <div class="modal-body">
+          <input type="hidden" id="consumeChemId">
+          <div class="form-group">
+            <label>Selected Material</label>
+            <input type="text" id="consumeChemName" readonly>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Current Available Stock</label>
+              <input type="text" id="consumeChemStock" readonly>
+            </div>
+            <div class="form-group">
+              <label for="consumeAmount">Amount to Deduct</label>
+              <input type="number" id="consumeAmount" step="0.1" min="0.1" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="consumeReason">Experiment Protocol / Reason</label>
+            <input type="text" id="consumeReason" placeholder="e.g. Mobile phase prep for Run #12" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-close="consumeChemicalModal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Record Deduction</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 4: Restock Chemical -->
+  <div class="modal-backdrop" id="restockChemicalModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-boxes-packing" style="color:var(--accent-emerald)"></i> Restock Chemical / Consumable</h3>
+        <button class="modal-close-btn" data-close="restockChemicalModal">&times;</button>
+      </div>
+      <form id="restockChemicalForm">
+        <div class="modal-body">
+          <input type="hidden" id="restockChemId">
+          <div class="form-group">
+            <label>Material Name</label>
+            <input type="text" id="restockChemName" readonly>
+          </div>
+          <div class="form-group">
+            <label for="restockAmount">Quantity to Add</label>
+            <input type="number" id="restockAmount" step="0.5" min="0.5" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-close="restockChemicalModal">Cancel</button>
+          <button type="submit" class="btn btn-success">Confirm Restock</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 5: Report Incident / Maintenance -->
+  <div class="modal-backdrop" id="incidentModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-triangle-exclamation" style="color:var(--accent-rose)"></i> Report Instrument Fault</h3>
+        <button class="modal-close-btn" data-close="incidentModal">&times;</button>
+      </div>
+      <form id="newIncidentForm">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="incidentEquipmentSelect">Affected Instrument</label>
+            <select id="incidentEquipmentSelect" required></select>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="incidentPriority">Severity Priority</label>
+              <select id="incidentPriority" required>
+                <option value="Low">Low (Minor Glitch / Non-blocking)</option>
+                <option value="Medium" selected>Medium (Performance Degraded)</option>
+                <option value="High">High (Instrument Down)</option>
+                <option value="Critical Emergency">Critical Emergency (Safety Risk)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="incidentIssueType">Issue Classification</label>
+              <input type="text" id="incidentIssueType" placeholder="e.g. Laser alignment lost" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="incidentDesc">Detailed Symptom Description</label>
+            <textarea id="incidentDesc" rows="3" placeholder="Provide error codes, unusual sounds, or diagnostic symptoms..." required></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-close="incidentModal">Cancel</button>
+          <button type="submit" class="btn btn-danger">Submit Ticket</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 6: QR Code Digital Pass -->
+  <div class="modal-backdrop" id="qrPassModal">
+    <div class="modal-dialog" style="max-width: 420px;">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-qrcode" style="color:var(--primary)"></i> Digital Lab Access Pass</h3>
+        <button class="modal-close-btn" data-close="qrPassModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="qr-pass-card">
+          <div style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.06em; color:#64748b; font-weight:700;">SmartLab Check-In Pass</div>
+          <h3 id="qrPassBookingTitle" style="color:#0f172a; margin:0.35rem 0; font-size:1.1rem;">Agilent 1260 HPLC</h3>
+          <p id="qrPassResearcher" style="font-size:0.85rem; color:#475569;">Dr. Sarah Vance</p>
+          
+          <div class="qr-code-box" id="qrCodeContainer"></div>
+          
+          <div style="font-family:var(--font-mono); font-weight:700; color:#0f172a; font-size:0.9rem;" id="qrPassCodeText">PASS-BK2001-9981</div>
+          <div style="font-size:0.75rem; color:#64748b; margin-top:0.4rem;" id="qrPassTimeWindow">2026-08-17 | 09:00 - 12:00</div>
+        </div>
+      </div>
+      <div class="modal-footer" style="justify-content:center;">
+        <button type="button" class="btn btn-primary btn-sm" id="simulateQrCheckInBtn">
+          <i class="fa-solid fa-camera"></i> Simulate Scanner Check-In
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notifications Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Application Logic -->
+  <script src="api.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
