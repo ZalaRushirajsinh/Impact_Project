@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # 🔬 SmartLab OS - Smart Lab Resource Management System
 
 A high-tech, production-grade **Smart Laboratory Resource Management System** with full **Frontend-to-Backend** implementation in HTML5, CSS3, JavaScript, and Python REST API.
@@ -117,3 +118,7 @@ Website/
 - **Libraries (CDN)**: Chart.js, QRCode.js, FontAwesome 6, Google Fonts (Plus Jakarta Sans & JetBrains Mono).
 - **Backend**: Python 3 Standard Library (`http.server`, `urllib.parse`, `json`, `os`, `time`, `random`).
 - **Database**: Persistent JSON document store (`data/lab_data.json`) with atomic write updates.
+=======
+# Impact_Project
+This project is based on the smart lab resource management system which will help the users to manage the resource and allocate the resource wisely to the usres and other customers who wanted to use the equipments.
+>>>>>>> 9a6a92299f38dac2f6cb942a94f86019439b5c1b
